@@ -4,12 +4,15 @@ from django.http import JsonResponse
 from kafka import KafkaProducer
 import json
 
-producer = KafkaProducer(
-    bootstrap_servers='kafka:9092',
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
-
 def send_message(request):
-    data = {"message": "Hello from producer!"}
-    producer.send('test-topic', value=data)
-    return JsonResponse({"status": "message sent"})
+    try:
+        producer = KafkaProducer(
+            bootstrap_servers='kafka:9092',
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
+        data = {"message": "Hello from producer!"}
+        producer.send('test-topic', value=data)
+        producer.flush()  # ensure message is sent
+        return JsonResponse({"status": "message sent"})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
